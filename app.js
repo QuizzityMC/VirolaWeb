@@ -14,8 +14,10 @@ class VirolaClient {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 3000;
+        this.defaultServerUrl = 'wss://virola.io';
         
         this.initializeUI();
+        this.loadDefaultConfig();
         this.loadSavedConfig();
     }
 
@@ -90,12 +92,42 @@ class VirolaClient {
             const saved = localStorage.getItem('virolaConfig');
             if (saved) {
                 const config = JSON.parse(saved);
-                document.getElementById('serverUrl').value = config.serverUrl || '';
+                document.getElementById('serverUrl').value = config.serverUrl || this.defaultServerUrl;
                 document.getElementById('username').value = config.username || '';
+            } else {
+                // Set default server URL if no saved config
+                document.getElementById('serverUrl').value = this.defaultServerUrl;
+                document.getElementById('registerServerUrl').value = this.defaultServerUrl;
             }
         } catch (e) {
             console.error('Failed to load saved config:', e);
+            // Set default server URL on error
+            document.getElementById('serverUrl').value = this.defaultServerUrl;
+            document.getElementById('registerServerUrl').value = this.defaultServerUrl;
         }
+    }
+
+    loadDefaultConfig() {
+        // Load default configuration from config.json
+        fetch('config.json')
+            .then(response => response.json())
+            .then(config => {
+                if (config.serverUrl) {
+                    this.defaultServerUrl = config.serverUrl;
+                    // Update form fields if they're empty
+                    const serverUrlInput = document.getElementById('serverUrl');
+                    const registerServerUrlInput = document.getElementById('registerServerUrl');
+                    if (!serverUrlInput.value) {
+                        serverUrlInput.value = this.defaultServerUrl;
+                    }
+                    if (!registerServerUrlInput.value) {
+                        registerServerUrlInput.value = this.defaultServerUrl;
+                    }
+                }
+            })
+            .catch(error => {
+                console.log('Could not load config.json, using default values');
+            });
     }
 
     saveConfig() {
@@ -154,11 +186,8 @@ class VirolaClient {
         document.getElementById('loginScreen').classList.remove('active');
         document.getElementById('registerScreen').classList.add('active');
         
-        // Copy server URL if available
-        const serverUrl = document.getElementById('serverUrl').value;
-        if (serverUrl) {
-            document.getElementById('registerServerUrl').value = serverUrl;
-        }
+        // Always use default server URL for registration
+        document.getElementById('registerServerUrl').value = this.defaultServerUrl;
     }
 
     showLoginScreen() {
