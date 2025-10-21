@@ -12,6 +12,7 @@ A lightweight, self-hostable web client for [Virola](https://virola.io/) servers
 - 🔄 Automatic reconnection
 - 💾 Configuration persistence
 - 🎨 Modern, responsive UI
+- 🔐 User registration and authentication
 
 🚀 **Technical Highlights:**
 - Pure JavaScript (no frameworks required)
@@ -70,7 +71,18 @@ Simply upload `index.html`, `styles.css`, and `app.js` to any static file hostin
 
 ## Usage
 
-1. **Connect to Server:**
+1. **Register or Connect to Server:**
+   
+   **For New Users (Registration):**
+   - Click "Register" on the login screen
+   - Enter your Virola server WebSocket URL (e.g., `wss://virola.io`)
+   - Choose a username
+   - Create a password (minimum 6 characters)
+   - Confirm your password
+   - Click "Register" to create your account
+   - After successful registration, you'll be automatically logged in
+   
+   **For Existing Users (Login):**
    - Enter your Virola server WebSocket URL (e.g., `wss://virola.io`)
    - Enter your username
    - (Optional) Enter password if required
@@ -155,6 +167,7 @@ The client is built with vanilla JavaScript and requires no build process. Simpl
 **Message Protocol**:
 The client supports the following message types:
 - `auth` - Authentication request
+- `register` - User registration request
 - `message` - Text message
 - `file` - File upload
 - `join_channel` - Join/create channel
