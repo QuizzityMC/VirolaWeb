@@ -1,0 +1,18 @@
+{
+  "serverUrl": "wss://virola.io",
+  "reconnect": {
+    "enabled": true,
+    "maxAttempts": 5,
+    "delay": 3000
+  },
+  "features": {
+    "fileUpload": true,
+    "markdown": false,
+    "emojis": true
+  },
+  "ui": {
+    "theme": "dark",
+    "showUserPanel": true,
+    "showTimestamps": true
+  }
+}

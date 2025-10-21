@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VirolaWeb - Virola Client</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="screen active">
+            <div class="login-container">
+                <h1>🦠 VirolaWeb</h1>
+                <p class="subtitle">Lightweight Virola Client</p>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="serverUrl">Server URL</label>
+                        <input type="text" id="serverUrl" placeholder="wss://virola.io" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" placeholder="Enter username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password (optional)</label>
+                        <input type="password" id="password" placeholder="Enter password">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Connect</button>
+                </form>
+                <div id="connectionStatus" class="status-message"></div>
+            </div>
+        </div>
+
+        <!-- Main Chat Interface -->
+        <div id="chatScreen" class="screen">
+            <div class="chat-layout">
+                <!-- Sidebar -->
+                <div class="sidebar">
+                    <div class="sidebar-header">
+                        <h2>Channels</h2>
+                        <button id="addChannelBtn" class="btn-icon" title="Add Channel">+</button>
+                    </div>
+                    <div class="channel-list" id="channelList">
+                        <!-- Channels will be populated here -->
+                    </div>
+                    <div class="sidebar-footer">
+                        <div class="user-info">
+                            <span id="currentUser"></span>
+                            <button id="disconnectBtn" class="btn-icon" title="Disconnect">⚙️</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Chat Area -->
+                <div class="main-content">
+                    <div class="chat-header">
+                        <h3 id="currentChannel">Select a channel</h3>
+                        <div class="header-actions">
+                            <button id="channelInfoBtn" class="btn-icon" title="Channel Info">ℹ️</button>
+                        </div>
+                    </div>
+                    <div class="messages-container" id="messagesContainer">
+                        <!-- Messages will be populated here -->
+                    </div>
+                    <div class="message-input-container">
+                        <form id="messageForm">
+                            <input type="text" id="messageInput" placeholder="Type a message..." disabled>
+                            <button type="button" id="attachFileBtn" class="btn-icon" title="Attach File" disabled>📎</button>
+                            <button type="submit" class="btn btn-send" disabled>Send</button>
+                        </form>
+                        <input type="file" id="fileInput" style="display: none;" multiple>
+                    </div>
+                </div>
+
+                <!-- User List Panel -->
+                <div class="user-panel" id="userPanel">
+                    <div class="panel-header">
+                        <h3>Users</h3>
+                    </div>
+                    <div class="user-list" id="userList">
+                        <!-- Users will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for creating/joining channels -->
+    <div id="channelModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Channel</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="channelName">Channel Name</label>
+                    <input type="text" id="channelName" placeholder="Enter channel name">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="createChannel">
+                        Create new channel (uncheck to join existing)
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelChannelBtn" class="btn">Cancel</button>
+                <button id="confirmChannelBtn" class="btn btn-primary">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

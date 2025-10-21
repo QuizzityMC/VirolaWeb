@@ -1,0 +1,25 @@
+{
+  "name": "virolaweb",
+  "version": "1.0.0",
+  "description": "A lightweight, self-hostable web client for Virola servers",
+  "main": "app.js",
+  "scripts": {
+    "start": "python -m http.server 8080",
+    "docker:build": "docker build -t virolaweb .",
+    "docker:run": "docker-compose up -d",
+    "docker:stop": "docker-compose down"
+  },
+  "keywords": [
+    "virola",
+    "chat",
+    "client",
+    "websocket",
+    "web"
+  ],
+  "author": "VirolaWeb",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/QuizzityMC/VirolaWeb"
+  }
+}
