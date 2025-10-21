@@ -14,8 +14,10 @@ class VirolaClient {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 3000;
+        this.defaultServerUrl = 'wss://virola.io';
         
         this.initializeUI();
+        this.loadDefaultConfig();
         this.loadSavedConfig();
     }
 
@@ -24,6 +26,22 @@ class VirolaClient {
         document.getElementById('loginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleLogin();
+        });
+
+        // Registration form
+        document.getElementById('registerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleRegister();
+        });
+
+        // Switch to registration screen
+        document.getElementById('showRegisterBtn').addEventListener('click', () => {
+            this.showRegisterScreen();
+        });
+
+        // Switch to login screen
+        document.getElementById('showLoginBtn').addEventListener('click', () => {
+            this.showLoginScreen();
         });
 
         // Message form
@@ -74,12 +92,42 @@ class VirolaClient {
             const saved = localStorage.getItem('virolaConfig');
             if (saved) {
                 const config = JSON.parse(saved);
-                document.getElementById('serverUrl').value = config.serverUrl || '';
+                document.getElementById('serverUrl').value = config.serverUrl || this.defaultServerUrl;
                 document.getElementById('username').value = config.username || '';
+            } else {
+                // Set default server URL if no saved config
+                document.getElementById('serverUrl').value = this.defaultServerUrl;
+                document.getElementById('registerServerUrl').value = this.defaultServerUrl;
             }
         } catch (e) {
             console.error('Failed to load saved config:', e);
+            // Set default server URL on error
+            document.getElementById('serverUrl').value = this.defaultServerUrl;
+            document.getElementById('registerServerUrl').value = this.defaultServerUrl;
         }
+    }
+
+    loadDefaultConfig() {
+        // Load default configuration from config.json
+        fetch('config.json')
+            .then(response => response.json())
+            .then(config => {
+                if (config.serverUrl) {
+                    this.defaultServerUrl = config.serverUrl;
+                    // Update form fields if they're empty
+                    const serverUrlInput = document.getElementById('serverUrl');
+                    const registerServerUrlInput = document.getElementById('registerServerUrl');
+                    if (!serverUrlInput.value) {
+                        serverUrlInput.value = this.defaultServerUrl;
+                    }
+                    if (!registerServerUrlInput.value) {
+                        registerServerUrlInput.value = this.defaultServerUrl;
+                    }
+                }
+            })
+            .catch(error => {
+                console.log('Could not load config.json, using default values');
+            });
     }
 
     saveConfig() {
@@ -106,6 +154,164 @@ class VirolaClient {
         this.config = { serverUrl, username, password };
         this.saveConfig();
         this.connect();
+    }
+
+    handleRegister() {
+        const serverUrl = document.getElementById('registerServerUrl').value.trim();
+        const username = document.getElementById('registerUsername').value.trim();
+        const password = document.getElementById('registerPassword').value;
+        const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
+        if (!serverUrl || !username || !password || !passwordConfirm) {
+            this.showRegisterStatus('Please fill in all fields', 'error');
+            return;
+        }
+
+        if (password !== passwordConfirm) {
+            this.showRegisterStatus('Passwords do not match', 'error');
+            return;
+        }
+
+        if (password.length < 6) {
+            this.showRegisterStatus('Password must be at least 6 characters', 'error');
+            return;
+        }
+
+        this.config = { serverUrl, username, password };
+        this.saveConfig();
+        this.registerUser();
+    }
+
+    showRegisterScreen() {
+        document.getElementById('loginScreen').classList.remove('active');
+        document.getElementById('registerScreen').classList.add('active');
+        
+        // Always use default server URL for registration
+        document.getElementById('registerServerUrl').value = this.defaultServerUrl;
+    }
+
+    showLoginScreen() {
+        document.getElementById('registerScreen').classList.remove('active');
+        document.getElementById('loginScreen').classList.add('active');
+        
+        // Copy server URL if available
+        const serverUrl = document.getElementById('registerServerUrl').value;
+        if (serverUrl) {
+            document.getElementById('serverUrl').value = serverUrl;
+        }
+    }
+
+    registerUser() {
+        this.showRegisterStatus('Connecting to server...', 'info');
+
+        try {
+            // Ensure WebSocket URL format
+            let wsUrl = this.config.serverUrl;
+            if (!wsUrl.startsWith('ws://') && !wsUrl.startsWith('wss://')) {
+                wsUrl = 'wss://' + wsUrl.replace(/^https?:\/\//, '');
+            }
+
+            this.ws = new WebSocket(wsUrl);
+            
+            this.ws.onopen = () => this.handleRegisterOpen();
+            this.ws.onmessage = (event) => this.handleRegisterMessage(event);
+            this.ws.onerror = (error) => this.handleRegisterError(error);
+            this.ws.onclose = (event) => this.handleRegisterClose(event);
+
+        } catch (error) {
+            this.showRegisterStatus('Connection failed: ' + error.message, 'error');
+            console.error('Connection error:', error);
+        }
+    }
+
+    handleRegisterOpen() {
+        console.log('WebSocket connection established for registration');
+        this.showRegisterStatus('Connected! Registering account...', 'success');
+
+        // Send registration request
+        this.sendToServer({
+            type: 'register',
+            username: this.config.username,
+            password: this.config.password
+        });
+    }
+
+    handleRegisterMessage(event) {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('Received during registration:', data);
+
+            switch (data.type) {
+                case 'register_success':
+                    this.handleRegisterSuccess(data.message);
+                    break;
+                case 'register_failed':
+                    this.handleRegisterFailed(data.message);
+                    break;
+                case 'error':
+                    this.showRegisterStatus(data.message, 'error');
+                    break;
+                default:
+                    console.log('Unknown message type during registration:', data.type);
+            }
+        } catch (error) {
+            console.error('Failed to parse registration message:', error);
+        }
+    }
+
+    handleRegisterError(error) {
+        console.error('WebSocket error during registration:', error);
+        this.showRegisterStatus('Connection error occurred', 'error');
+    }
+
+    handleRegisterClose(event) {
+        console.log('WebSocket connection closed during registration:', event.code, event.reason);
+        if (!this.registrationSuccessful) {
+            this.showRegisterStatus('Connection lost during registration', 'error');
+        }
+    }
+
+    handleRegisterSuccess(message) {
+        this.registrationSuccessful = true;
+        this.showRegisterStatus('Registration successful! Redirecting to login...', 'success');
+        
+        // Copy credentials to login form
+        document.getElementById('serverUrl').value = this.config.serverUrl;
+        document.getElementById('username').value = this.config.username;
+        document.getElementById('password').value = this.config.password;
+        
+        // Close WebSocket and switch to login
+        if (this.ws) {
+            this.ws.close();
+            this.ws = null;
+        }
+        
+        setTimeout(() => {
+            this.showLoginScreen();
+            // Optionally auto-login after registration
+            this.handleLogin();
+        }, 2000);
+    }
+
+    handleRegisterFailed(message) {
+        this.showRegisterStatus('Registration failed: ' + (message || 'Username may already exist'), 'error');
+        if (this.ws) {
+            this.ws.close();
+            this.ws = null;
+        }
+    }
+
+    showRegisterStatus(message, type) {
+        const statusDiv = document.getElementById('registrationStatus');
+        statusDiv.textContent = message;
+        statusDiv.className = `status-message ${type}`;
+        
+        if (type === 'success' && !message.includes('Redirecting')) {
+            setTimeout(() => {
+                statusDiv.textContent = '';
+                statusDiv.className = 'status-message';
+            }, 3000);
+        }
     }
 
     connect() {
